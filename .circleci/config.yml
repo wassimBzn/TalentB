@@ -1,0 +1,47 @@
+version: 2
+jobs:
+  build:
+    machine:
+      enabled: true
+    steps:
+      - checkout
+      - run: docker login -u $DOCKERUSER -p $DOCKERPASS
+      - run: docker build -t wassimbzn/talentb:$CIRCLE_BRANCH .
+      - run: docker push  wassimbzn/talentb:$CIRCLE_BRANCH
+  deploy_prod:
+    machine
+      enabled: true
+    steps:
+    - run:
+        name: Deploy Branch to cluster
+      #        TODO: add script that checks if stack is up
+      #        else run docker stack deploy
+        command: |
+          ssh $SSH_USER@$SSH_HOST "docker login -u $DOCKERUSER -p $DOCKERPASS
+                                   docker service update --force --with-registry-auth --image wassimbzn/talentb:$CIRCLE_BRANCH TalentB_stack_web;"
+ 
+workflows:
+  version: 2
+  build-and-deploy:
+    jobs:
+      - build
+      - deploy_prod:
+          requires:
+            - build
+          filters:
+            branches:
+              only: master
+ 
+#  two:
+#    docker:
+#      - image: circleci/ruby:2.4.1
+#    steps:
+#      - checkout
+#      - run: echo "A more familiar hi"
+#      - run: sleep 15
+#workflows:
+#  version: 2
+#  one_and_two:
+#    jobs:
+#      - one
+#      - two
